@@ -29,6 +29,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { getRazorpayKey } from "@/lib/razorpay";
 
 dayjs.extend(utc);
 
@@ -72,68 +73,78 @@ function EventSessionBooking({ eventDetails, sessionDetails, isSessionPass }) {
 
   // Razorpay handler
   const openRazorpay = useCallback(
-    async (order, bookingId, formData) => {
-      const loaded = await loadRazorpay();
-      if (!loaded) throw new Error("Razorpay SDK failed to load.");
+    async (order, bookingId, formData, passedKey) => {
+      try {
+        const loaded = await loadRazorpay();
+        if (!loaded) throw new Error("Razorpay SDK failed to load.");
 
-      const rzp = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
-        amount: order.amount,
-        currency: order.currency,
-        name: "Taal Events",
-        description: isSessionPass
-          ? `All Sessions Pass for ${eventDetails?.title}`
-          : `Tickets for ${eventDetails?.title}`,
-        order_id: order.id,
-        prefill: {
-          name: formData.attendeeName || "Guest",
-          contact: formData.attendeePhone || "",
-        },
-        theme: { color: "#7c3aed" },
-        handler: async (response) => {
-          try {
-            const { data: verifyData, error: verifyError } = await apiRequest({
-              url: "/user/verify-ticket-payment",
-              method: "POST",
-              payload: {
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                orderId: bookingId,
-              },
-              authRequired: true,
-            });
+        const activeKey = getRazorpayKey(passedKey || paymentData?.key);
 
-            if (verifyError)
-              return showDialog({
+        const rzp = new window.Razorpay({
+          key: activeKey,
+          amount: order.amount,
+          currency: order.currency || "INR",
+          name: "Taal Events",
+          description: isSessionPass
+            ? `All Sessions Pass for ${eventDetails?.title}`
+            : `Tickets for ${eventDetails?.title}`,
+          order_id: order.id,
+          prefill: {
+            name: formData.attendeeName || "Guest",
+            contact: formData.attendeePhone || "",
+          },
+          theme: { color: "#7c3aed" },
+          handler: async (response) => {
+            try {
+              const { data: verifyData, error: verifyError } = await apiRequest({
+                url: "/user/verify-ticket-payment",
+                method: "POST",
+                payload: {
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature,
+                  orderId: bookingId,
+                },
+                authRequired: true,
+              });
+
+              if (verifyError)
+                return showDialog({
+                  type: "error",
+                  title: "Payment Verification Failed",
+                  description: verifyError || "Unable to verify payment.",
+                });
+
+              if (verifyData?.status === 200) {
+                showDialog({
+                  type: "success",
+                  title: "Booking Confirmed",
+                  description:
+                    verifyData.message ||
+                    "Your booking is confirmed! Check your email for details.",
+                });
+              }
+              reset();
+            } catch (err) {
+              showDialog({
                 type: "error",
                 title: "Payment Verification Failed",
-                description: verifyError || "Unable to verify payment.",
-              });
-
-            if (verifyData?.status === 200) {
-              showDialog({
-                type: "success",
-                title: "Booking Confirmed",
-                description:
-                  verifyData.message ||
-                  "Your booking is confirmed! Check your email for details.",
+                description: err.message || "Unable to verify payment.",
               });
             }
-            reset();
-          } catch (err) {
-            showDialog({
-              type: "error",
-              title: "Payment Verification Failed",
-              description: err.message || "Unable to verify payment.",
-            });
-          }
-        },
-      });
+          },
+        });
 
-      rzp.open();
+        rzp.open();
+      } catch (err) {
+        showDialog({
+          type: "error",
+          title: "Payment Error",
+          description: err.message || "Failed to initiate payment.",
+        });
+      }
     },
-    [apiRequest, eventDetails, showDialog, reset, isSessionPass]
+    [apiRequest, eventDetails, showDialog, reset, isSessionPass, paymentData]
   );
 
   // booking API
@@ -175,6 +186,7 @@ function EventSessionBooking({ eventDetails, sessionDetails, isSessionPass }) {
 
         setPaymentData({
           order: data.data.order,
+          key: data?.data?.key,
           bookingId: data.data.bookingId,
           breakdown: data.data.breakdown,
           formData,
@@ -387,7 +399,8 @@ function EventSessionBooking({ eventDetails, sessionDetails, isSessionPass }) {
                 openRazorpay(
                   paymentData.order,
                   paymentData.bookingId,
-                  paymentData.formData
+                  paymentData.formData,
+                  paymentData.key
                 );
               }}
             >

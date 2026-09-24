@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import useAxios from "@/hooks/useAxios";
 import AddressList from "@/components/_sections/AddressList";
 import { useAppDialog } from "@/contexts/AppDialogContext";
+import { getRazorpayKey } from "@/lib/razorpay";
 
 const loadRazorpay = () =>
   new Promise((resolve) => {
@@ -144,7 +145,7 @@ function ProductCheckoutPage() {
       }
 
       const rzp = new window.Razorpay({
-        key: data?.data?.payment?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
+        key: getRazorpayKey(data?.data?.payment?.keyId),
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency || "INR",
         name: "Taal Events",

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import AddressList from "./AddressList";
 import useAxios from "@/hooks/useAxios";
 import { useAppDialog } from "@/contexts/AppDialogContext";
+import { getRazorpayKey } from "@/lib/razorpay";
 
 const loadRazorpay = () =>
   new Promise((resolve) => {
@@ -87,7 +88,7 @@ function Checkout() {
       }
 
       const rzp = new window.Razorpay({
-        key: data?.data?.payment?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
+        key: getRazorpayKey(data?.data?.payment?.keyId),
         amount: paymentData.amount,
         currency: paymentData.currency || "INR",
         name: "Taal Events",

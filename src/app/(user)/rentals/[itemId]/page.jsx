@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import useAxios from "@/hooks/useAxios";
 import AddressList from "@/components/_sections/AddressList";
 import { showToast } from "@/components/_ui/toast-utils";
+import { getRazorpayKey } from "@/lib/razorpay";
 
 export default function RentalProductDetailsPage() {
   const { itemId } = useParams();
@@ -75,7 +76,7 @@ export default function RentalProductDetailsPage() {
       }
 
       const options = {
-        key: data?.data?.payment?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
+        key: getRazorpayKey(data?.data?.payment?.keyId),
         amount: razorpayPaymentData.amount,
         currency: razorpayPaymentData.currency || "INR",
         name: product.title,
