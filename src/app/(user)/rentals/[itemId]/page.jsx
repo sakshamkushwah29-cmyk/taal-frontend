@@ -67,13 +67,17 @@ export default function RentalProductDetailsPage() {
     });
 
     if (!error && data?.status === 201) {
-      const orderData = data.data.booking;
-      const razorpayPaymentData = data.data.payment.razorpayOrder;
+      const orderData = data?.data?.booking;
+      const razorpayPaymentData = data?.data?.payment?.razorpayOrder;
+      if (!razorpayPaymentData || !razorpayPaymentData.amount) {
+        showToast("error", data?.data?.payment?.error || data?.message || "Could not initialize Razorpay order. Please try again.");
+        return;
+      }
 
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
+        key: data?.data?.payment?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
         amount: razorpayPaymentData.amount,
-        currency: "INR",
+        currency: razorpayPaymentData.currency || "INR",
         name: product.title,
         description: "Rental Payment",
         order_id: razorpayPaymentData.id,

@@ -122,8 +122,17 @@ function ProductCheckoutPage() {
         return;
       }
 
-      const order = data.data.order;
-      const razorpayOrder = data.data.payment.razorpayOrder;
+      const order = data?.data?.order;
+      const razorpayOrder = data?.data?.payment?.razorpayOrder;
+      if (!razorpayOrder || !razorpayOrder.amount) {
+        showDialog({
+          type: "error",
+          title: "Payment Order Failed",
+          description: data?.data?.payment?.error || data?.message || "Could not initialize Razorpay order. Please try again.",
+        });
+        return;
+      }
+
       const loaded = await loadRazorpay();
       if (!loaded) {
         showDialog({
@@ -135,10 +144,10 @@ function ProductCheckoutPage() {
       }
 
       const rzp = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
+        key: data?.data?.payment?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
         amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        name: "Taal",
+        currency: razorpayOrder.currency || "INR",
+        name: "Taal Events",
         description: productDetails.title,
         image: productDetails?.images?.[0],
         order_id: razorpayOrder.id,

@@ -81,12 +81,16 @@ function Checkout() {
 
       const order = data?.data?.order;
       const paymentData = data?.data?.payment?.razorpayOrder;
+      if (!paymentData || !paymentData.amount) {
+        showDialog({ type: "error", title: "Payment Failed", description: data?.data?.payment?.error || "Could not initialize Razorpay order. Please try again." });
+        return;
+      }
 
       const rzp = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: data?.data?.payment?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
         amount: paymentData.amount,
-        currency: paymentData.currency,
-        name: "Taal",
+        currency: paymentData.currency || "INR",
+        name: "Taal Events",
         description: "Order Payment",
         order_id: paymentData.id,
         prefill: {
