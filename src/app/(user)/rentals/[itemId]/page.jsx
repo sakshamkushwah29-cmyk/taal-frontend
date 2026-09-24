@@ -71,7 +71,7 @@ export default function RentalProductDetailsPage() {
       const razorpayPaymentData = data.data.payment.razorpayOrder;
 
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
         amount: razorpayPaymentData.amount,
         currency: "INR",
         name: product.title,

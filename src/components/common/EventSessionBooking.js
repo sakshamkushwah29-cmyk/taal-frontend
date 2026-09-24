@@ -77,7 +77,7 @@ function EventSessionBooking({ eventDetails, sessionDetails, isSessionPass }) {
       if (!loaded) throw new Error("Razorpay SDK failed to load.");
 
       const rzp = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
         amount: order.amount,
         currency: order.currency,
         name: "Taal Events",

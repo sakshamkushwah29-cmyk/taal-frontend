@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, Minus, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ const loadRazorpay = () =>
 
 function ProductCheckoutPage() {
   const { productId } = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { showDialog } = useAppDialog();
   const { request: apiRequest, loading } = useAxios();
@@ -35,8 +36,20 @@ function ProductCheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("online");
   const [loadingProduct, setLoadingProduct] = useState(false);
 
-  const qty = 1;
-  const variant = productDetails?.selectedVariant;
+  const initialQty = parseInt(searchParams.get("qty") || "1", 10);
+  const paramVariantId = searchParams.get("variantId");
+  const [qty, setQty] = useState(initialQty > 0 ? initialQty : 1);
+
+  const variant = useMemo(() => {
+    if (!productDetails) return null;
+    if (paramVariantId && productDetails.variants?.length) {
+      const match = productDetails.variants.find(
+        (v) => (v.variantId || v._id) === paramVariantId
+      );
+      if (match) return match;
+    }
+    return productDetails.selectedVariant;
+  }, [productDetails, paramVariantId]);
 
   const { subtotal, shippingCharges, total } = useMemo(() => {
     if (!variant) return { subtotal: 0, shippingCharges: 0, total: 0 };
@@ -77,7 +90,7 @@ function ProductCheckoutPage() {
     try {
       const payload = {
         productId: productDetails._id,
-        variantId: productDetails.selectedVariant.variantId,
+        variantId: variant?.variantId || variant?.raw?._id || variant?._id || productDetails.selectedVariant?.variantId,
         qty,
         addressId: selectedAddress._id,
         paymentMethod,
@@ -122,7 +135,7 @@ function ProductCheckoutPage() {
       }
 
       const rzp = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_RJ78sILs64v88G",
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         name: "Taal",
@@ -222,12 +235,31 @@ function ProductCheckoutPage() {
                         <p className="text-xs text-gray-500 mt-1">
                           {variant.color} / {variant.size}
                         </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          Qty: {qty}
-                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-gray-500">Qty:</span>
+                          <div className="inline-flex items-center border border-gray-200 rounded">
+                            <button
+                              type="button"
+                              onClick={() => setQty((q) => Math.max(1, q - 1))}
+                              disabled={qty <= 1}
+                              className="px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                            >
+                              -
+                            </button>
+                            <span className="px-2 text-xs font-medium text-gray-900">{qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => setQty((q) => Math.min(variant.stock || 99, q + 1))}
+                              disabled={variant.stock && qty >= variant.stock}
+                              className="px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
                       </div>
                       <p className="text-sm font-semibold text-gray-900">
-                        ₹{variant.effectivePrice?.toLocaleString("en-IN")}
+                        ₹{(variant.effectivePrice * qty)?.toLocaleString("en-IN")}
                       </p>
                     </div>
                   </div>

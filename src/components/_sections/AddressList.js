@@ -7,6 +7,7 @@ import useAxios from "@/hooks/useAxios";
 import AddressCard from "@/components/_cards/AddressCard";
 import AddressAddEditDialog from "@/components/_dialogs/AddressAddEditDialog";
 import LoadingDots from "../common/LoadingDots";
+import { showToast } from "@/components/_ui/toast-utils";
 
 function AddressList({ mode = "view", onSelect }) {
   const { request: apiRequest, loading } = useAxios();
@@ -27,30 +28,35 @@ function AddressList({ mode = "view", onSelect }) {
   const handleSave = async (formData) => {
     const method = editing ? "PUT" : "POST";
     const url = editing ? `/user/update-address` : "/user/add-address";
-    let prev = [...addresses];
 
-    const { data } = await apiRequest({
+    const { data, error } = await apiRequest({
       method,
       url,
       authRequired: true,
       payload: editing ? { ...formData, addressId: editing._id } : formData,
     });
 
-    if (data?.status === 200 || data?.status === 201) {
+    if (error || (!data?.success && data?.status !== 200 && data?.status !== 201)) {
+      showToast("error", error || data?.message || "Failed to save address.");
+      return;
+    }
+
+    showToast("success", editing ? "Address updated successfully" : "Address added successfully");
+    const savedAddress = data?.data;
+    if (savedAddress) {
       if (editing) {
         setAddresses((prev) =>
-          prev.map((a) => (a._id === editing._id ? data.data : a))
+          prev.map((a) => (a._id === editing._id ? savedAddress : a))
         );
       } else {
-        setAddresses((prev) => [...prev, data.data]);
-        if (mode === "selectable" && data.data?._id) {
-          setSelectedId(data.data._id);
-          onSelect?.(data.data);
+        setAddresses((prev) => [...prev, savedAddress]);
+        if (mode === "selectable" && savedAddress._id) {
+          setSelectedId(savedAddress._id);
+          onSelect?.(savedAddress);
         }
       }
-    } else {
-      setAddresses(prev);
     }
+    await fetchAddresses();
 
     setOpen(false);
     setEditing(null);
@@ -60,15 +66,19 @@ function AddressList({ mode = "view", onSelect }) {
     const prev = [...addresses];
     setAddresses(addresses.filter((a) => a._id !== id));
 
-    const { data } = await apiRequest({
+    const { data, error } = await apiRequest({
       method: "PUT",
       url: `/user/delete-address?addressId=${id}`,
       payload: {},
       authRequired: true,
     });
 
-    if (!data?.success) {
+    if (error || !data?.success) {
       setAddresses(prev);
+      showToast("error", error || data?.message || "Failed to delete address.");
+    } else {
+      showToast("success", "Address deleted successfully");
+      await fetchAddresses();
     }
   };
 

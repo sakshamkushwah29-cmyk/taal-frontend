@@ -121,7 +121,8 @@ export default function ProductDetailsPage() {
       });
       return;
     }
-    router.push(`/products/${productId}/checkout`);
+    const variantId = selectedVariant.variantId || selectedVariant?.raw?._id || selectedVariant?._id;
+    router.push(`/products/${productId}/checkout?qty=${quantity}&variantId=${variantId}`);
   };
 
   if (loading) return <FestivalLoading />;
