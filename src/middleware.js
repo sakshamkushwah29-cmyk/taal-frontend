@@ -1,16 +1,15 @@
+if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY =
+    "pk_test_ZW5hYmxlZC1yZWluZGVlci00NjczLmNsZXJrLmFjY291bnRzLmRldiQ";
+}
+if (!process.env.CLERK_SECRET_KEY) {
+  process.env.CLERK_SECRET_KEY =
+    "sk_test_lpsPMpPEIXprcvopUJUloSqZdhEdwt9OKWElNVdf3l";
+}
+
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-const publishableKey =
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-  "pk_test_ZW5hYmxlZC1yZWluZGVlci00NjczLmNsZXJrLmFjY291bnRzLmRldiQ";
-const secretKey =
-  process.env.CLERK_SECRET_KEY ||
-  "sk_test_lpsPMpPEIXprcvopUJUloSqZdhEdwt9OKWElNVdf3l";
-
-export default clerkMiddleware(undefined, {
-  publishableKey,
-  secretKey,
-});
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
