@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { useClerk } from "@clerk/nextjs";
 
 import ROUTE_PATH from "@/libs/route-path";
 import { showToast } from "@/components/_ui/toast-utils";
@@ -12,25 +13,34 @@ import { useDispatch } from "react-redux";
 export default function LogoutPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { signOut } = useClerk();
 
   useEffect(() => {
+    let isMounted = true;
+
     const handleLogout = async () => {
       try {
-        dispatch(logoutUser());
-        showToast("success", "Logged out successfully!");
+        await signOut();
+      } catch (err) {
+        console.warn("Clerk signOut error:", err);
+      }
 
-        // Redirect to login after 2 seconds
+      dispatch(logoutUser());
+      showToast("success", "Logged out successfully!");
+
+      if (isMounted) {
         setTimeout(() => {
           router.replace(ROUTE_PATH.AUTH.LOGIN);
-        }, 2000);
-      } catch (err) {
-        console.error("Logout failed:", err);
-        router.replace(ROUTE_PATH.AUTH.LOGIN);
+        }, 800);
       }
     };
 
     handleLogout();
-  }, [dispatch, router]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, router, signOut]);
 
   return (
     <div className="flex flex-1 items-center justify-center bg-gray-50 py-10">

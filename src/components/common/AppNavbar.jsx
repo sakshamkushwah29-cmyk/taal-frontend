@@ -102,6 +102,11 @@ export default function AppNavbar() {
     []
   );
 
+  const userProfilePic =
+    authUser?.user?.profilePic || authUser?.user?.user?.profilePic;
+  const userName =
+    authUser?.user?.name || authUser?.user?.user?.name || "My Account";
+
   const ACCOUNT_LINKS = useMemo(
     () => [
       {
@@ -160,13 +165,21 @@ export default function AppNavbar() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="hover:bg-gray-100 dark:hover:bg-gray-800 overflow-hidden"
                     >
-                      <User className="w-5 h-5" />
+                      {userProfilePic ? (
+                        <img
+                          src={userProfilePic}
+                          alt={userName}
+                          className="w-7 h-7 rounded-full object-cover border border-brand/20"
+                        />
+                      ) : (
+                        <User className="w-5 h-5 text-brand" />
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuLabel>{userName}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {ACCOUNT_LINKS.map((link) => (
                       <DropdownMenuItem asChild key={link.href}>
@@ -294,7 +307,7 @@ export default function AppNavbar() {
                 <ShoppingCart className="w-5 h-5" />
               </Button>
 
-              {!isAuthenticated && (
+              {!isAuthenticated ? (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -302,6 +315,23 @@ export default function AppNavbar() {
                   onClick={() => router.push("/login")}
                 >
                   <User className="w-5 h-5" />
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800 overflow-hidden"
+                  onClick={() => router.push("/account/edit-profile")}
+                >
+                  {userProfilePic ? (
+                    <img
+                      src={userProfilePic}
+                      alt={userName}
+                      className="w-6 h-6 rounded-full object-cover border border-brand/20"
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-brand" />
+                  )}
                 </Button>
               )}
             </div>

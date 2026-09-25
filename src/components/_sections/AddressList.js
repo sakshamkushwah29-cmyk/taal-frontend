@@ -9,12 +9,18 @@ import AddressAddEditDialog from "@/components/_dialogs/AddressAddEditDialog";
 import LoadingDots from "../common/LoadingDots";
 import { showToast } from "@/components/_ui/toast-utils";
 
-function AddressList({ mode = "view", onSelect }) {
+function AddressList({ mode = "view", onSelect, selectedId: externalSelectedId }) {
   const { request: apiRequest, loading } = useAxios();
   const [addresses, setAddresses] = useState([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(externalSelectedId || null);
+
+  useEffect(() => {
+    if (externalSelectedId !== undefined) {
+      setSelectedId(externalSelectedId);
+    }
+  }, [externalSelectedId]);
 
   const fetchAddresses = async () => {
     const { data } = await apiRequest({
@@ -22,7 +28,25 @@ function AddressList({ mode = "view", onSelect }) {
       url: "/user/get-all-address",
       authRequired: true,
     });
-    if (data?.data?.addresses) setAddresses(data.data.addresses);
+    if (data?.data?.addresses) {
+      const list = data.data.addresses;
+      setAddresses(list);
+      if (mode === "selectable" && list.length > 0) {
+        setSelectedId((current) => {
+          if (current && list.some((a) => a._id === current)) {
+            const found = list.find((a) => a._id === current);
+            if (found) onSelect?.(found);
+            return current;
+          }
+          const defaultAddr = list.find((a) => a.isDefault) || list[0];
+          if (defaultAddr) {
+            onSelect?.(defaultAddr);
+            return defaultAddr._id;
+          }
+          return null;
+        });
+      }
+    }
   };
 
   const handleSave = async (formData) => {

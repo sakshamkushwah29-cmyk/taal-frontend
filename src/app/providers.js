@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/common/ProtectedRoute";
 import AppNavbar from "@/components/common/AppNavbar";
 import AppFooter from "@/components/common/AppFooter";
 import { AppDialogProvider } from "@/contexts/AppDialogContext";
+import ClerkAuthSync from "@/components/auth/ClerkAuthSync";
 
 import {
   Tooltip,
@@ -23,6 +24,7 @@ export default function Providers({ children }) {
   return (
     <Provider store={store}>
       <AuthProvider>
+        <ClerkAuthSync />
         <NotificationProvider>
           <ToastProvider>
             <AppDialogProvider>
