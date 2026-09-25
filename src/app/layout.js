@@ -23,8 +23,12 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const clerkPubKey =
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+    "pk_test_ZW5hYmxlZC1yZWluZGVlci00NjczLmNsZXJrLmFjY291bnRzLmRldiQ";
+
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={clerkPubKey}>
       <html lang="en" suppressHydrationWarning>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
